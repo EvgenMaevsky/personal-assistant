@@ -63,9 +63,11 @@ def get_due_reminders(today: date) -> list[tuple[Reminder, str]]:
 
 
 def mark_reminder_sent(reminder_id: int, label: str) -> None:
-    col = {"7d": "sent_7d", "1d": "sent_1d", "0d": "sent_0d"}[label]
+    col_map = {"7d": "sent_7d", "1d": "sent_1d", "0d": "sent_0d"}
+    if label not in col_map:
+        raise ValueError(f"Invalid label: {label!r}")
     with db.get_connection() as conn:
-        conn.execute(f"UPDATE reminders SET {col} = 1 WHERE id = ?", (reminder_id,))
+        conn.execute(f"UPDATE reminders SET {col_map[label]} = 1 WHERE id = ?", (reminder_id,))
         conn.commit()
 
 
