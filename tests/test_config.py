@@ -16,17 +16,20 @@ def test_config_reads_env_vars():
 
 def test_invalid_morning_time_raises(monkeypatch):
     monkeypatch.setenv("MORNING_TIME", "25:00")
+    from config import Config
     with pytest.raises(Exception):
-        from importlib import reload
-        import config as cfg_mod
-        reload(cfg_mod)
-        cfg_mod.Config()
+        Config()
 
 
 def test_invalid_evening_time_raises(monkeypatch):
     monkeypatch.setenv("EVENING_TIME", "18:99")
+    from config import Config
     with pytest.raises(Exception):
-        from importlib import reload
-        import config as cfg_mod
-        reload(cfg_mod)
-        cfg_mod.Config()
+        Config()
+
+
+def test_non_numeric_time_raises(monkeypatch):
+    monkeypatch.setenv("MORNING_TIME", "9:00")
+    from config import Config
+    with pytest.raises(Exception):
+        Config()

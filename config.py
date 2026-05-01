@@ -1,3 +1,5 @@
+import re
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
@@ -14,10 +16,9 @@ class Config(BaseSettings):
     @field_validator("morning_time", "evening_time")
     @classmethod
     def valid_time(cls, v: str) -> str:
-        parts = v.split(":")
-        if len(parts) != 2:
-            raise ValueError(f"Time must be HH:MM, got: {v}")
-        h, m = int(parts[0]), int(parts[1])
+        if not re.match(r"^\d{2}:\d{2}$", v):
+            raise ValueError(f"Time must be HH:MM (e.g. 09:00), got: {v}")
+        h, m = int(v[:2]), int(v[3:5])
         if not (0 <= h <= 23 and 0 <= m <= 59):
             raise ValueError(f"Time out of range: {v}")
         return v
