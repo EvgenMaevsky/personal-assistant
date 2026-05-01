@@ -62,13 +62,14 @@ User (Telegram) ──► python-telegram-bot ──► handlers.py
 ```
 personal-assistant/
 ├── bot.py           # Entry point: initializes bot, registers handlers, starts scheduler
-├── handlers.py      # Telegram handlers for text and voice messages
+├── handlers.py      # Telegram handlers for text and voice messages; checks awaiting_action state
 ├── nlp.py           # Calls Ollama to extract intent + entities from text
-├── whisper_stt.py   # Downloads voice message audio, transcribes with faster-whisper
+├── whisper_stt.py   # Downloads voice message audio, converts with ffmpeg, transcribes with faster-whisper
 ├── reminders.py     # Reminder CRUD + reminder-due logic
 ├── tasks.py         # Task CRUD + carry-forward logic
 ├── scheduler.py     # Scheduled jobs: morning standup, evening check-in, reminder checks
 ├── db.py            # SQLite connection, schema creation, migrations
+├── state.py         # In-memory awaiting_action dict: tracks per-chat context for multi-turn replies
 ├── config.py        # Loads and validates .env configuration
 ├── requirements.txt
 └── .env             # Secrets and configuration (not committed)
@@ -138,9 +139,11 @@ Ollama (qwen2.5:3b) is called with a structured system prompt instructing it to 
 
 1. User sends a voice message in Telegram
 2. `handlers.py` receives the `Voice` update, calls `whisper_stt.py`
-3. `whisper_stt.py` downloads the `.ogg` audio file via Telegram API, converts to WAV, runs `faster-whisper` (small model) transcription with `language="uk"` (Ukrainian) fallback to auto-detect
+3. `whisper_stt.py` downloads the `.oga` audio file via Telegram API, converts to WAV using `ffmpeg` (must be installed on the VM: `sudo apt install ffmpeg`), runs `faster-whisper` (small model) transcription with `language="uk"` (Ukrainian) fallback to auto-detect
 4. Transcribed text is passed to the same NLP pipeline as typed text
 5. Response is sent back as a text message
+
+**System dependency:** `ffmpeg` must be installed on the Oracle VM.
 
 Transcription latency: ~2–5 seconds on Oracle A1 ARM CPU.
 
@@ -205,6 +208,20 @@ Bot:  "Чудово! 1 виконано, 1 переноситься на зав�
 ```
 Bot:  "⏰ Нагадування: завтра — день народження мами (15 травня)"
 ```
+
+---
+
+## Conversation State
+
+`state.py` holds a single in-memory dict: `awaiting_action: dict[int, str]` keyed by `chat_id`.
+
+| Value                 | Set when                                      | Consumed when                        |
+|-----------------------|-----------------------------------------------|--------------------------------------|
+| `"awaiting_tasks"`    | Bot sends the morning standup prompt          | User replies — saves tasks for today |
+| `"awaiting_completion"` | Bot sends the evening check-in prompt       | User replies with task numbers       |
+| (absent / `None`)     | Any other time                                | NLP handles the message normally     |
+
+`handlers.py` checks `awaiting_action[chat_id]` before calling `nlp.py`. If a state is set, the reply is interpreted directly (task lines or number list) without NLP. The state is cleared after consumption.
 
 ---
 
