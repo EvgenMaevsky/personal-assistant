@@ -1,0 +1,32 @@
+# tests/test_config.py
+import os
+import pytest
+
+
+def test_config_reads_env_vars():
+    from config import Config
+    cfg = Config()
+    assert cfg.bot_token == "test_token"
+    assert cfg.chat_id == 12345
+    assert cfg.morning_time == "09:00"
+    assert cfg.evening_time == "18:00"
+    assert cfg.ollama_model == "qwen2.5:3b"
+    assert cfg.whisper_model == "small"
+
+
+def test_invalid_morning_time_raises(monkeypatch):
+    monkeypatch.setenv("MORNING_TIME", "25:00")
+    with pytest.raises(Exception):
+        from importlib import reload
+        import config as cfg_mod
+        reload(cfg_mod)
+        cfg_mod.Config()
+
+
+def test_invalid_evening_time_raises(monkeypatch):
+    monkeypatch.setenv("EVENING_TIME", "18:99")
+    with pytest.raises(Exception):
+        from importlib import reload
+        import config as cfg_mod
+        reload(cfg_mod)
+        cfg_mod.Config()
