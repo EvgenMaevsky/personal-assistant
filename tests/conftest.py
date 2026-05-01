@@ -16,10 +16,11 @@ def isolated_db(monkeypatch, tmp_path):
     import db
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "test.db")
     db.init_db()
+    yield
 
 
 @pytest.fixture(autouse=True)
-def reset_state():
+def reset_state(isolated_db):
     import state
     state.clear_all()
     yield
