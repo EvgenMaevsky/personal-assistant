@@ -1,5 +1,8 @@
 # Secrets — never commit
 .env
+docs/*.key
+docs/*.key.pub
+docs/*.pem
 
 # Python
 __pycache__/

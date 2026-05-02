@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 def _make_response(payload: dict) -> MagicMock:
     mock = MagicMock()
-    mock.json.return_value = {"message": {"content": json.dumps(payload)}}
+    mock.json.return_value = {"result": {"response": json.dumps(payload)}, "success": True}
     mock.raise_for_status = MagicMock()
     return mock
 
@@ -58,20 +58,20 @@ def test_parse_complete_tasks(mock_post):
 
 
 @patch("nlp.httpx.post")
-def test_ollama_request_error_raises_runtime_error(mock_post):
+def test_cf_request_error_raises_runtime_error(mock_post):
     import httpx
     mock_post.side_effect = httpx.RequestError("connection refused")
     from nlp import parse_message
-    with pytest.raises(RuntimeError, match="Ollama error"):
+    with pytest.raises(RuntimeError, match="CF error"):
         parse_message("test", "2026-05-01")
 
 
 @patch("nlp.httpx.post")
 def test_invalid_json_response_raises_runtime_error(mock_post):
     mock = MagicMock()
-    mock.json.return_value = {"message": {"content": "not json {"}}
+    mock.json.return_value = {"result": {"response": "not json {"}, "success": True}
     mock.raise_for_status = MagicMock()
     mock_post.return_value = mock
     from nlp import parse_message
-    with pytest.raises(RuntimeError, match="Ollama error"):
+    with pytest.raises(RuntimeError, match="CF error"):
         parse_message("test", "2026-05-01")

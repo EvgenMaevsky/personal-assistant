@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run once on the Oracle A1 VM (Ubuntu 22.04 ARM) after cloning the repo.
+# Run once on the VM (Ubuntu 22.04) after cloning the repo.
 # Usage: bash deploy/setup.sh
 set -euo pipefail
 
@@ -11,16 +11,6 @@ PYTHON="$VENV/bin/python"
 echo "=== Installing system dependencies ==="
 sudo apt-get update -q
 sudo apt-get install -y python3.11 python3.11-venv python3-pip git ffmpeg
-
-echo "=== Installing Ollama ==="
-if ! command -v ollama &>/dev/null; then
-    curl -fsSL https://ollama.com/install.sh | sh
-else
-    echo "Ollama already installed, skipping."
-fi
-
-echo "=== Pulling Ollama model ==="
-ollama pull qwen2.5:3b
 
 echo "=== Setting up Python virtualenv ==="
 python3.11 -m venv "$VENV"

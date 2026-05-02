@@ -27,24 +27,26 @@ Today is {today}. Resolve relative dates like "tomorrow" or "наступног�
 
 
 def parse_message(text: str, today: str) -> dict:
-    """Call Ollama and return parsed intent dict. Raises RuntimeError on any failure."""
+    """Call Cloudflare Workers AI and return parsed intent dict. Raises RuntimeError on any failure."""
+    url = (
+        f"https://api.cloudflare.com/client/v4/accounts"
+        f"/{config.cf_account_id}/ai/run/{config.cf_model}"
+    )
     payload = {
-        "model": config.ollama_model,
         "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT.format(today=today)},
             {"role": "user", "content": text},
         ],
-        "stream": False,
-        "format": "json",
     }
     try:
         response = httpx.post(
-            f"{config.ollama_host}/api/chat",
+            url,
             json=payload,
+            headers={"Authorization": f"Bearer {config.cf_api_token}"},
             timeout=30,
         )
         response.raise_for_status()
-        content = response.json()["message"]["content"]
+        content = response.json()["result"]["response"]
         return json.loads(content)
     except (httpx.RequestError, httpx.HTTPStatusError, json.JSONDecodeError, KeyError) as exc:
-        raise RuntimeError(f"Ollama error: {exc}") from exc
+        raise RuntimeError(f"CF error: {exc}") from exc

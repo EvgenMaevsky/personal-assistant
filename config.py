@@ -9,8 +9,9 @@ class Config(BaseSettings):
     chat_id: int
     morning_time: str = "09:00"
     evening_time: str = "18:00"
-    ollama_model: str = "qwen2.5:3b"
-    ollama_host: str = "http://localhost:11434"
+    cf_account_id: str
+    cf_api_token: str
+    cf_model: str = "@cf/meta/llama-3.1-8b-instruct"
     whisper_model: str = "small"
 
     @field_validator("morning_time", "evening_time")

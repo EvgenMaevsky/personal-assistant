@@ -6,8 +6,8 @@ os.environ.setdefault("BOT_TOKEN", "test_token")
 os.environ.setdefault("CHAT_ID", "12345")
 os.environ.setdefault("MORNING_TIME", "09:00")
 os.environ.setdefault("EVENING_TIME", "18:00")
-os.environ.setdefault("OLLAMA_MODEL", "qwen2.5:3b")
-os.environ.setdefault("OLLAMA_HOST", "http://localhost:11434")
+os.environ.setdefault("CF_ACCOUNT_ID", "test_account_id")
+os.environ.setdefault("CF_API_TOKEN", "test_api_token")
 os.environ.setdefault("WHISPER_MODEL", "small")
 
 

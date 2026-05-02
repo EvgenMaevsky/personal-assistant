@@ -10,7 +10,8 @@ def test_config_reads_env_vars():
     assert cfg.chat_id == 12345
     assert cfg.morning_time == "09:00"
     assert cfg.evening_time == "18:00"
-    assert cfg.ollama_model == "qwen2.5:3b"
+    assert cfg.cf_account_id == "test_account_id"
+    assert cfg.cf_api_token == "test_api_token"
     assert cfg.whisper_model == "small"
 
 
