@@ -68,9 +68,10 @@ async def _handle_nlp(update: Update, text: str, today: date) -> None:
         r = reminders.add_reminder(chat_id, parsed["title"], event_date)
         d7 = r.event_date - timedelta(days=7)
         d1 = r.event_date - timedelta(days=1)
+        notify_dates = [d for d in [d7, d1, r.event_date] if d >= today]
+        dates_str = ", ".join(d.strftime("%d.%m") for d in notify_dates)
         await update.message.reply_text(
-            f"Зрозумів! Нагадаю про {r.title} "
-            f"{d7.strftime('%d.%m')}, {d1.strftime('%d.%m')} та {r.event_date.strftime('%d.%m')}."
+            f"Зрозумів! Нагадаю про {r.title} {dates_str}."
         )
 
     elif intent == "list_reminders":
