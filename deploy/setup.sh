@@ -10,7 +10,9 @@ PYTHON="$VENV/bin/python"
 
 echo "=== Installing system dependencies ==="
 sudo apt-get update -q
-sudo apt-get install -y python3.11 python3.11-venv python3-pip git ffmpeg
+sudo apt-get install -y python3.11 python3.11-venv python3-pip git ffmpeg \
+    pkg-config libavformat-dev libavcodec-dev libavdevice-dev \
+    libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
 
 echo "=== Setting up Python virtualenv ==="
 python3.11 -m venv "$VENV"
