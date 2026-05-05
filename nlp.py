@@ -1,6 +1,11 @@
 import json
+import logging
+import re
+
 import anthropic
 from config import config
+
+logger = logging.getLogger(__name__)
 
 _SYSTEM_PROMPT = """You are a JSON extraction assistant for a personal assistant bot.
 The user speaks Ukrainian or English. Extract the intent and entities from their message.
@@ -39,6 +44,11 @@ def parse_message(text: str, today: str) -> dict:
             system=_SYSTEM_PROMPT.format(today=today),
             messages=[{"role": "user", "content": text}],
         )
-        return json.loads(response.content[0].text)
+        raw = response.content[0].text.strip()
+        # Strip markdown code fences if present
+        cleaned = re.sub(r"^```(?:json)?\s*", "", raw)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+        logger.info("Claude response: %s", cleaned)
+        return json.loads(cleaned)
     except (anthropic.APIError, json.JSONDecodeError, IndexError) as exc:
         raise RuntimeError(f"Claude API error: {exc}") from exc
