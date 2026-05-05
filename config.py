@@ -10,7 +10,7 @@ class Config(BaseSettings):
     morning_time: str = "09:00"
     evening_time: str = "18:00"
     anthropic_api_key: str
-    nlp_model: str = "claude-3-5-haiku-latest"
+    nlp_model: str = "claude-3-5-haiku-20241022"
     whisper_model: str = "small"
 
     @field_validator("morning_time", "evening_time")
