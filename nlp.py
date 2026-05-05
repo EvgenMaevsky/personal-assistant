@@ -1,5 +1,5 @@
 import json
-import httpx
+import anthropic
 from config import config
 
 _SYSTEM_PROMPT = """You are a JSON extraction assistant for a personal assistant bot.
@@ -20,33 +20,25 @@ Valid intents:
 - delete_reminder: user wants to remove a reminder (put event name in title)
 - add_tasks: user lists work tasks (put them in tasks array)
 - complete_tasks: user says which tasks they finished (put 1-based numbers in task_indices)
+- start_tasks: user says they are starting/working on a task (put 1-based numbers in task_indices)
+- cancel_tasks: user wants to cancel/skip/drop a task (put 1-based numbers in task_indices)
 - list_tasks: user asks what tasks they have today
 - unknown: anything else
 
 Today is {today}. Resolve relative dates like "tomorrow" or "наступного понеділка" to ISO format."""
 
+_client = anthropic.Anthropic(api_key=config.anthropic_api_key)
+
 
 def parse_message(text: str, today: str) -> dict:
-    """Call Cloudflare Workers AI and return parsed intent dict. Raises RuntimeError on any failure."""
-    url = (
-        f"https://api.cloudflare.com/client/v4/accounts"
-        f"/{config.cf_account_id}/ai/run/{config.cf_model}"
-    )
-    payload = {
-        "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT.format(today=today)},
-            {"role": "user", "content": text},
-        ],
-    }
+    """Call Claude API and return parsed intent dict. Raises RuntimeError on any failure."""
     try:
-        response = httpx.post(
-            url,
-            json=payload,
-            headers={"Authorization": f"Bearer {config.cf_api_token}"},
-            timeout=30,
+        response = _client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=512,
+            system=_SYSTEM_PROMPT.format(today=today),
+            messages=[{"role": "user", "content": text}],
         )
-        response.raise_for_status()
-        content = response.json()["result"]["response"]
-        return json.loads(content)
-    except (httpx.RequestError, httpx.HTTPStatusError, json.JSONDecodeError, KeyError) as exc:
-        raise RuntimeError(f"CF error: {exc}") from exc
+        return json.loads(response.content[0].text)
+    except (anthropic.APIError, json.JSONDecodeError, IndexError) as exc:
+        raise RuntimeError(f"Claude API error: {exc}") from exc

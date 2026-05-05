@@ -9,9 +9,7 @@ class Config(BaseSettings):
     chat_id: int
     morning_time: str = "09:00"
     evening_time: str = "18:00"
-    cf_account_id: str
-    cf_api_token: str
-    cf_model: str = "@cf/meta/llama-3.1-8b-instruct"
+    anthropic_api_key: str
     whisper_model: str = "small"
 
     @field_validator("morning_time", "evening_time")

@@ -29,7 +29,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         done = tasks.complete_tasks_by_indices(chat_id, today, indices)
         remaining = len(tasks.get_pending_tasks(chat_id, today))
         await update.message.reply_text(
-            f"Чудово! {done} виконано, {remaining} переноситься на завтра."
+            f"Чудово! {done} виконано, {remaining} залишається на завтра."
         )
         return
 
@@ -102,16 +102,38 @@ async def _handle_nlp(update: Update, text: str, today: date) -> None:
         done = tasks.complete_tasks_by_indices(chat_id, today, indices)
         remaining = len(tasks.get_pending_tasks(chat_id, today))
         await update.message.reply_text(
-            f"Чудово! {done} виконано, {remaining} переноситься на завтра."
+            f"Чудово! {done} виконано, {remaining} залишається на завтра."
         )
 
+    elif intent == "start_tasks":
+        indices = parsed.get("task_indices", [])
+        started = tasks.start_tasks_by_indices(chat_id, today, indices)
+        await update.message.reply_text(f"🔄 {started} завдання позначено як 'в роботі'.")
+
+    elif intent == "cancel_tasks":
+        indices = parsed.get("task_indices", [])
+        cancelled = tasks.cancel_tasks_by_indices(chat_id, today, indices)
+        await update.message.reply_text(f"Скасовано {cancelled} завдання.")
+
     elif intent == "list_tasks":
-        today_tasks = [t for t in tasks.get_tasks_for_date(chat_id, today) if t.status == "pending"]
-        if not today_tasks:
+        all_today = tasks.get_tasks_for_date(chat_id, today)
+        active = [t for t in all_today if t.status in (tasks.PENDING, tasks.IN_PROGRESS)]
+        done_tasks = [t for t in all_today if t.status == tasks.DONE]
+
+        if not active and not done_tasks:
             await update.message.reply_text("Завдань на сьогодні немає.")
             return
-        lines = "\n".join(f"{i + 1}. {t.title}" for i, t in enumerate(today_tasks))
-        await update.message.reply_text(f"📋 Завдання на сьогодні:\n{lines}")
+
+        status_icon = {tasks.PENDING: "⬜", tasks.IN_PROGRESS: "🔄"}
+        lines = []
+        if active:
+            lines.append("📋 Завдання на сьогодні:")
+            lines += [f"{status_icon[t.status]} {i + 1}. {t.title}" for i, t in enumerate(active)]
+        if done_tasks:
+            lines.append("\n✅ Виконано:")
+            lines += [f"• {t.title}" for t in done_tasks]
+
+        await update.message.reply_text("\n".join(lines))
 
     else:
         await update.message.reply_text("Не зрозумів. Спробуй переформулювати.")

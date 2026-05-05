@@ -33,7 +33,8 @@ async def _morning_standup(context) -> None:
     pending = tasks.get_pending_tasks(chat_id, today)
 
     if pending:
-        lines = "\n".join(f"- {t.title}" for t in pending)
+        status_icon = {tasks.PENDING: "⬜", tasks.IN_PROGRESS: "🔄"}
+        lines = "\n".join(f"{status_icon.get(t.status, '•')} {t.title}" for t in pending)
         msg = (
             f"Доброго ранку! \U0001f4cb Незавершене:\n{lines}\n\n"
             "Що плануєш на сьогодні? (відповідай списком, кожне завдання з нового рядка)"
@@ -51,7 +52,10 @@ async def _morning_standup(context) -> None:
 async def _evening_checkin(context) -> None:
     chat_id = config.chat_id
     today = date.today()
-    pending_today = [t for t in tasks.get_tasks_for_date(chat_id, today) if t.status == "pending"]
+    pending_today = [
+        t for t in tasks.get_tasks_for_date(chat_id, today)
+        if t.status in (tasks.PENDING, tasks.IN_PROGRESS)
+    ]
 
     if not pending_today:
         await context.bot.send_message(
@@ -60,7 +64,8 @@ async def _evening_checkin(context) -> None:
         )
         return
 
-    lines = "\n".join(f"{i + 1}. {t.title}" for i, t in enumerate(pending_today))
+    status_icon = {tasks.PENDING: "⬜", tasks.IN_PROGRESS: "🔄"}
+    lines = "\n".join(f"{status_icon[t.status]} {i + 1}. {t.title}" for i, t in enumerate(pending_today))
     msg = (
         f"Кінець дня! Що вдалось зробити?\n{lines}\n\n"
         "Надішли номери виконаних завдань (наприклад: '1 2')"

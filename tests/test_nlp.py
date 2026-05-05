@@ -6,14 +6,15 @@ from unittest.mock import MagicMock, patch
 
 def _make_response(payload: dict) -> MagicMock:
     mock = MagicMock()
-    mock.json.return_value = {"result": {"response": json.dumps(payload)}, "success": True}
-    mock.raise_for_status = MagicMock()
+    block = MagicMock()
+    block.text = json.dumps(payload)
+    mock.content = [block]
     return mock
 
 
-@patch("nlp.httpx.post")
-def test_parse_add_reminder(mock_post):
-    mock_post.return_value = _make_response({
+@patch("nlp._client")
+def test_parse_add_reminder(mock_client):
+    mock_client.messages.create.return_value = _make_response({
         "intent": "add_reminder",
         "title": "день народження мами",
         "date": "2026-05-15",
@@ -27,9 +28,9 @@ def test_parse_add_reminder(mock_post):
     assert result["date"] == "2026-05-15"
 
 
-@patch("nlp.httpx.post")
-def test_parse_add_tasks(mock_post):
-    mock_post.return_value = _make_response({
+@patch("nlp._client")
+def test_parse_add_tasks(mock_client):
+    mock_client.messages.create.return_value = _make_response({
         "intent": "add_tasks",
         "title": "",
         "date": "",
@@ -42,9 +43,9 @@ def test_parse_add_tasks(mock_post):
     assert "фіксити баг" in result["tasks"]
 
 
-@patch("nlp.httpx.post")
-def test_parse_complete_tasks(mock_post):
-    mock_post.return_value = _make_response({
+@patch("nlp._client")
+def test_parse_complete_tasks(mock_client):
+    mock_client.messages.create.return_value = _make_response({
         "intent": "complete_tasks",
         "title": "",
         "date": "",
@@ -57,21 +58,22 @@ def test_parse_complete_tasks(mock_post):
     assert result["task_indices"] == [1, 2]
 
 
-@patch("nlp.httpx.post")
-def test_cf_request_error_raises_runtime_error(mock_post):
-    import httpx
-    mock_post.side_effect = httpx.RequestError("connection refused")
+@patch("nlp._client")
+def test_api_error_raises_runtime_error(mock_client):
+    import anthropic
+    mock_client.messages.create.side_effect = anthropic.APIConnectionError(request=MagicMock())
     from nlp import parse_message
-    with pytest.raises(RuntimeError, match="CF error"):
+    with pytest.raises(RuntimeError, match="Claude API error"):
         parse_message("test", "2026-05-01")
 
 
-@patch("nlp.httpx.post")
-def test_invalid_json_response_raises_runtime_error(mock_post):
+@patch("nlp._client")
+def test_invalid_json_response_raises_runtime_error(mock_client):
     mock = MagicMock()
-    mock.json.return_value = {"result": {"response": "not json {"}, "success": True}
-    mock.raise_for_status = MagicMock()
-    mock_post.return_value = mock
+    block = MagicMock()
+    block.text = "not json {"
+    mock.content = [block]
+    mock_client.messages.create.return_value = mock
     from nlp import parse_message
-    with pytest.raises(RuntimeError, match="CF error"):
+    with pytest.raises(RuntimeError, match="Claude API error"):
         parse_message("test", "2026-05-01")
