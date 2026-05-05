@@ -27,5 +27,10 @@ def transcribe(ogg_bytes: bytes) -> str:
             capture_output=True,
         )
         model = _get_model()
-        segments, _ = model.transcribe(wav_path, language="uk")
+        segments, _ = model.transcribe(
+            wav_path,
+            language="uk",
+            beam_size=5,
+            vad_filter=True,
+        )
         return " ".join(seg.text.strip() for seg in segments).strip()

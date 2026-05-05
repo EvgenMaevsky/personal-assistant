@@ -34,7 +34,7 @@ def parse_message(text: str, today: str) -> dict:
     """Call Claude API and return parsed intent dict. Raises RuntimeError on any failure."""
     try:
         response = _client.messages.create(
-            model="claude-haiku-4-5",
+            model=config.nlp_model,
             max_tokens=512,
             system=_SYSTEM_PROMPT.format(today=today),
             messages=[{"role": "user", "content": text}],

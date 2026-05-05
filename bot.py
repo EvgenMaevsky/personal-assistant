@@ -20,6 +20,7 @@ def main() -> None:
     db.init_db()
     app = Application.builder().token(config.bot_token).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_text))
+    app.add_handler(MessageHandler(filters.VOICE, handlers.handle_voice))
     scheduler.register_jobs(app)
     logging.info("Bot started. Polling...")
     app.run_polling()
